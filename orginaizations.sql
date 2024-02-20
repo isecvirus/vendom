@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS vendom (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    oui TEXT,
+    org TEXT
+)
