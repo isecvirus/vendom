@@ -53,19 +53,6 @@ class Vendom:
         self.database = new_file
         self.load(new_file) # to load the new data
 
-    def merge_file(self, file):
-        """
-        Merge two data files in a buffer to read from.
-
-        :param file: json data file
-        :return: new merged dict.
-        """
-        file_data = self.read(file)
-
-        self.data = {**self.data, **{i:file_data[i] for i in sorted(file_data)}}
-
-        return self.data
-
     def export(self, *id:str, file:str):
         """
         Exports a specified number of ids to a file
