@@ -1,25 +1,19 @@
 """
 * Author = virus
-* Version = 1.0.0
+* Version = 1.1.0
 
 * Organizations unique identifier
 """
 
 import json
 
-class DATA(dict):
-    def get_name(self):
-        return self.get("org", None)
-
-    def get_address(self):
-        return self.get("address", None)
 
 class Vendom:
-    def __init__(self, file:str="data.json"):
-        self.file = file
+    def __init__(self, database:str= "organizations.json"):
+        self.database = database
         self.data = {}
 
-        self.load(file)
+        self.load(database)
 
     def __len__(self):
         """
@@ -36,7 +30,7 @@ class Vendom:
             with open(file, "r") as o:
                 return json.loads(o.read())
         except FileNotFoundError:
-            raise FileNotFoundError("The data file isn't exist")
+            raise FileNotFoundError("Couldn't find the OUI database.")
 
     def load(self, file):
         """
@@ -50,14 +44,13 @@ class Vendom:
         """
         self.data = self.read(file)
 
-
     def update_file(self, new_file):
         """
         Updates the data file
 
         :param new_file: existing full data file path
         """
-        self.file = new_file
+        self.database = new_file
         self.load(new_file) # to load the new data
 
     def merge_file(self, file):
@@ -105,65 +98,38 @@ class Vendom:
         """
         return sorted(self.data)
 
-    def get_index(self, index:int) -> DATA:
+    def get_oui(self, mac:str, sep:str=":"):
         """
 
-        :param index: the human index of the wanted id
-        :return: a data object
-        ```
-        vendom = Vendom()
-        print(vendom.get_index(100))
-
-        >> {"xxxxxx": {"org": "...", "address": "..."}}
-        ```
+        :param mac: mac address parser
+        :return:
         """
 
-        length = self.__len__()
-        index = min(max(1, index - 1), length)
+        if mac.count(sep) == 5:
+            portions = mac.split(sep)
+            oui = portions[:3]
 
-        if index <= (length - 1):
-            return DATA(self.data.get(sorted(self.data)[index], None))
+            return "".join(oui).lower()
+        return mac
 
-    def get(self, *id:str) -> dict:
+    def get(self, *id:str, sep:str=":") -> dict|str:
         """
 
         :param id: ids of queried organizations
         ```
         vendom = Vendom()
-        vendom.get("000000", "000001", ...)
+        vendom.get("000000", "01:00:00:00:00:00", ...)
 
-        >> {"xxxxxx": {"org": "...", "address": "..."}, ...}
+        >> {"xxxxxx": "<org>", ...}
         ```
         :return:
         """
-        return {i: (self.data.get(i, None)) for i in id}
 
-    def search(self, string:str, by:str="org", case_sensitive:bool=False) -> dict:
-        """
+        vendor = "<unknown>"
+        ouis = {}
+        for oui in id:
+            vendor = self.data.get(oui, vendor)
 
-        :param string: the target string
-        :param by: search by "org" or "address"
-        :param case_sensitive: make the search sensitive to char case or not
-        :return: dict
+            ouis[oui] = vendor
 
-        ```
-        vendom = Vendom()
-        print(vendom.search("ieee", case_sensitive=False))
-
-        >> {"xxxxxx": {"org": "...", "address": "..."}}
-        ```
-        """
-        if not by in ["org", "address"]:
-            by = "org"
-
-        result = {}
-        for id in self.data:
-            org_name = self.data[id][by]
-            org_name = (str(org_name).lower() if not case_sensitive else org_name)
-
-            string = (str(string).lower() if not case_sensitive else string)
-
-            if string in org_name:
-                result[id] = self.data[id]
-
-        return result
+        return ouis if len(id) > 1 else vendor
